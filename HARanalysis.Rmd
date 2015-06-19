@@ -1,0 +1,54 @@
+---
+output:
+  html_document:
+    keep_md: yes
+---
+# Practical Machine Learning Course Project
+## Analyzing HAR Data 
+
+In this project we will predict the manner in which people exercise. 
+```{r, cache=TRUE}
+setwd("C:/Users/gaurav.bansal/Favorites/Downloads/HARanalysis") ##set working directory
+library(caret)
+library(ggplot2)
+```
+
+We read in the data. We then split the Training data into 'training' and 'validation' datasets.   
+```{r, cache=TRUE}
+Training <- read.csv("pml-training.csv")
+Testing <- read.csv("pml-testing.csv")
+
+inTrain <- createDataPartition(y=Training$classe, p=0.80, list=F)
+training <- Training[inTrain, ]
+valid <- Training[-inTrain, ]
+```
+
+As it turns out, using 'raw_timestamp_part_1' and 'raw_timestamp_part_2' as predictors leads to very good prediction of 'classe'. Let's build a random forests model with these two predictors.  
+```{r, cache=TRUE}
+fit <- train(classe ~ raw_timestamp_part_1 + raw_timestamp_part_2, data=training, method="rf")
+predvalid <- predict(fit, valid)
+tablevalid <- table(predvalid, valid$classe)
+```
+
+Let's now look at the accuracy of the model we've built on the validation dataset. 
+```{r, cache=TRUE}
+accuracy <- sum(diag(tablevalid))/sum(tablevalid)
+print(accuracy)
+```
+
+Now let's run this on the Testing data. 
+```{r, cache=TRUE}
+predTesting <- predict(fit, Testing)
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+pml_write_files(predTesting)
+```
+
+
+
+
